@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:#0a0805;color:#e8dfc0;font-family:'Crimson Pro',serif;overflow-x:hidden;cursor:none}
+
+#cursor{position:fixed;width:16px;height:16px;border-radius:50%;border:1.5px solid #c9a84c;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .2s,height .2s}
+#cdot{position:fixed;width:4px;height:4px;border-radius:50%;background:#c9a84c;pointer-events:none;z-index:99999;transform:translate(-50%,-50%)}
+
+canvas{position:fixed;inset:0;pointer-events:none}
+#bgc{z-index:0}
+#emc{z-index:1;opacity:.6}
+
+.tx{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.03) 3px,rgba(0,0,0,.03) 4px),repeating-linear-gradient(90deg,transparent,transparent 6px,rgba(0,0,0,.015) 6px,rgba(0,0,0,.015) 7px)}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(6,4,2,.94);border-bottom:1px solid rgba(201,168,76,.18);display:flex;align-items:center;justify-content:space-between;padding:.85rem 3rem;backdrop-filter:blur(14px)}
+.nb{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.3em;color:#c9a84c}
+.nl{display:flex;gap:2rem}
+.nl a{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#7a5c12;text-decoration:none;transition:color .3s}
+.nl a:hover{color:#c9a84c}
+
+/* ===== HERO ===== */
+#hero{min-height:100vh;position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8rem 2rem 5rem;text-align:center;overflow:hidden}
+.hglow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.05) 0%,transparent 70%);animation:breathe 5s ease-in-out infinite;pointer-events:none}
+@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.5}50%{transform:translate(-50%,-50%) scale(1.2);opacity:1}}
+.eyebrow{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.6em;color:#5c4010;text-transform:uppercase;margin-bottom:1.2rem;animation:fup .9s ease both}
+.htitle{font-family:'Cinzel',serif;font-size:clamp(2.2rem,6vw,4.8rem);font-weight:900;color:#e8d08a;text-shadow:0 0 80px rgba(201,168,76,.2);line-height:1.1;animation:fup .9s .15s ease both}
+.hsub{font-family:'Cinzel',serif;font-size:clamp(.75rem,1.5vw,1rem);letter-spacing:.2em;color:#6b4f10;margin:.6rem 0 1.4rem;animation:fup .9s .25s ease both}
+.hdesc{max-width:520px;font-size:1.05rem;font-weight:300;font-style:italic;color:#b0a070;line-height:1.9;animation:fup .9s .35s ease both}
+@keyframes fup{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO PHOTO FRAME */
+.hero-photo-wrap{position:relative;margin:2.5rem auto 2rem;width:min(420px,85vw);animation:fup .9s .5s ease both}
+.photo-frame-outer{
+  position:relative;
+  border:1px solid rgba(201,168,76,.25);
+  padding:10px;
+  background:linear-gradient(135deg,#1a1408,#0e0b05);
+  box-shadow:0 0 60px rgba(0,0,0,.8),0 0 120px rgba(0,0,0,.5),inset 0 0 40px rgba(0,0,0,.6);
+}
+.photo-frame-outer::before{content:'';position:absolute;inset:4px;border:1px solid rgba(201,168,76,.1);pointer-events:none;z-index:2}
+/* Corner ornaments */
+.co{position:absolute;width:24px;height:24px;border-color:#c9a84c;border-style:solid;z-index:3}
+.co.tl{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.co.tr{top:-1px;right:-1px;border-width:2px 2px 0 0}
+.co.bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px}
+.co.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+
+.photo-img{
+  display:block;width:100%;
+  filter:sepia(.35) contrast(1.1) brightness(.9) saturate(.85);
+  transition:filter 1s ease;
+  position:relative;z-index:1
+}
+.photo-img:hover{filter:sepia(.15) contrast(1.05) brightness(1) saturate(1)}
+
+/* Scan line overlay */
+.scanline{position:absolute;inset:10px;z-index:4;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);
+  animation:scan 8s linear infinite}
+@keyframes scan{0%{background-position:0 0}100%{background-position:0 200px}}
+
+/* Torch on frame */
+.ft{position:absolute;z-index:5}
+.ft.tl{top:-8px;left:12px}.ft.tr{top:-8px;right:12px}
+.flame{width:10px;height:14px;margin:0 auto;border-radius:50% 50% 30% 30%;background:radial-gradient(ellipse at 50% 70%,#ff5500,#ffaa00 40%,#ffe050 70%,transparent);animation:flk .12s ease-in-out infinite alternate;filter:blur(.8px)}
+@keyframes flk{0%{transform:scaleX(1) rotate(-3deg);opacity:.85}100%{transform:scaleX(.8) scaleY(1.1) rotate(3deg);opacity:1}}
+.fglow{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,0,.18),transparent 70%);animation:fgk .25s ease-in-out infinite alternate}
+@keyframes fgk{0%{opacity:.5;transform:translateX(-50%) scale(1)}100%{opacity:1;transform:translateX(-50%) scale(1.3)}}
+.fbody{width:4px;height:16px;background:#2e1a08;margin:0 auto;border-radius:2px}
+
+.photo-caption{
+  margin-top:.8rem;
+  font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.3em;
+  color:#4a3408;text-transform:uppercase;text-align:center
+}
+
+.sl{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-top:2rem;animation:float 2.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
+.sl span{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.3em;color:#4a3408}
+.slb{width:1px;height:55px;background:linear-gradient(180deg,#c9a84c,transparent);animation:drain 2.5s ease-in-out infinite}
+@keyframes drain{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ===== SECTION ===== */
+.wrap{position:relative;z-index:3;max-width:1100px;margin:0 auto;padding:6rem 2rem}
+.sh{text-align:center;margin-bottom:4.5rem}
+.stag{display:inline-block;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.5em;text-transform:uppercase;color:#5c4010;border:1px solid rgba(92,64,16,.35);padding:.4rem 1.4rem;margin-bottom:.8rem}
+.stitle{font-family:'Cinzel',serif;font-size:clamp(1.5rem,3vw,2.3rem);color:#e8d08a;font-weight:700}
+.grule{width:110px;height:1px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:.9rem auto 0}
+
+/* ===== DUAL PHOTO+TEXT SLAB ===== */
+.dual-slab{
+  position:relative;
+  background:linear-gradient(135deg,#160f06 0%,#1e1609 40%,#160f06 100%);
+  border:1px solid rgba(201,168,76,.12);
+  overflow:hidden;margin-bottom:4rem;
+  opacity:0;transform:translateY(36px);
+  transition:opacity .9s ease,transform .9s ease
+}
+.dual-slab.visible{opacity:1;transform:translateY(0)}
+.dual-slab::before{content:'';position:absolute;inset:10px;border:1px solid rgba(201,168,76,.06);pointer-events:none;z-index:2}
+
+/* SVG cracks */
+.cracks{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.2}
+
+.dual-inner{display:grid;grid-template-columns:1fr 1fr;min-height:380px;position:relative;z-index:3}
+.d-photo{padding:2.5rem 2rem 2.5rem 2.5rem;display:flex;flex-direction:column;justify-content:center;border-right:1px solid rgba(201,168,76,.07)}
+.d-text{padding:2.5rem 2.5rem 2.5rem 2rem;display:flex;flex-direction:column;justify-content:center}
+
+/* Photo inside slab */
+.slab-photo-wrap{position:relative}
+.slab-photo-frame{
+  border:1px solid rgba(201,168,76,.2);
+  padding:6px;
+  background:rgba(0,0,0,.4);
+  position:relative
+}
+.slab-photo-frame::before{content:'';position:absolute;inset:3px;border:1px solid rgba(201,168,76,.08);z-index:2;pointer-events:none}
+.sco{position:absolute;width:16px;height:16px;border-color:rgba(201,168,76,.6);border-style:solid;z-index:3}
+.sco.tl{top:-1px;left:-1px;border-width:1.5px 0 0 1.5px}
+.sco.tr{top:-1px;right:-1px;border-width:1.5px 1.5px 0 0}
+.sco.bl{bottom:-1px;left:-1px;border-width:0 0 1.5px 1.5px}
+.sco.br{bottom:-1px;right:-1px;border-width:0 1.5px 1.5px 0}
+.slab-img{display:block;width:100%;filter:sepia(.4) contrast(1.1) brightness(.85) saturate(.8);transition:filter .8s}
+.slab-img:hover{filter:sepia(.1) contrast(1.05) brightness(.98) saturate(1)}
+.sft{position:absolute;top:-6px}
+.sft.l{left:10px}.sft.r{right:10px}
+.sflame{width:8px;height:11px;margin:0 auto;border-radius:50% 50% 30% 30%;background:radial-gradient(ellipse at 50% 70%,#ff5500,#ffaa00 40%,#ffe050 70%,transparent);animation:flk .13s ease-in-out infinite alternate;filter:blur(.6px)}
+.sfglow{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,0,.2),transparent 70%);animation:fgk .25s ease-in-out infinite alternate}
+.sfbody{width:3px;height:13px;background:#2e1a08;margin:0 auto;border-radius:1px}
+.photo-label{margin-top:.7rem;font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.3em;color:#4a3408;text-align:center;text-transform:uppercase}
+
+/* Aksara block */
+.ak-block{background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.08);padding:1.2rem 1.4rem;margin-bottom:1rem}
+.ak-text{font-family:'Cinzel',serif;font-size:clamp(.8rem,1.4vw,.95rem);color:#c9a84c;letter-spacing:.12em;line-height:2.3;text-shadow:0 0 16px rgba(201,168,76,.3)}
+.ak-glow{position:relative}
+.ak-glow::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(201,168,76,.04),transparent 70%);animation:agp 3s ease-in-out infinite}
+@keyframes agp{0%,100%{opacity:.4}50%{opacity:1}}
+.cmark{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.35em;text-transform:uppercase;color:#4a3408;display:flex;align-items:center;gap:.7rem;margin-bottom:.8rem}
+.cmark::before,.cmark::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,#2e1a08)}
+.slabel{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.38em;text-transform:uppercase;color:#5c4010;display:block;margin-bottom:.5rem}
+.stxt-title{font-family:'Cinzel',serif;font-size:clamp(1.1rem,1.8vw,1.55rem);color:#e8d08a;font-weight:700;margin-bottom:.9rem;line-height:1.3}
+.stxt-body{font-size:.98rem;color:#b8a878;line-height:1.9;font-weight:300;margin-bottom:.8rem}
+.stxt-body strong{color:#e8d08a;font-weight:400}
+.stxt-body em{color:#c9a84c;font-style:italic}
+.sfact{display:flex;align-items:flex-start;gap:.7rem;padding:.75rem;background:rgba(201,168,76,.035);border-left:2px solid rgba(201,168,76,.25);margin-top:.8rem}
+.sfact-i{font-size:1rem;margin-top:.1rem}
+.sfact p{font-size:.87rem;color:#907844;line-height:1.7;font-style:italic}
+.transl{margin-top:.8rem;padding:.9rem 1rem;border-left:2px solid rgba(201,168,76,.18);font-style:italic;color:#907844;font-size:.9rem;line-height:1.8}
+
+/* FULL PHOTO SHOWCASE */
+.photo-showcase{
+  position:relative;z-index:3;
+  background:linear-gradient(180deg,#0a0805 0%,#130e06 30%,#130e06 70%,#0a0805 100%);
+  border-top:1px solid rgba(201,168,76,.08);
+  border-bottom:1px solid rgba(201,168,76,.08);
+  padding:5rem 2rem;overflow:hidden
+}
+.ps-inner{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.ps-bigframe{
+  position:relative;
+  border:1px solid rgba(201,168,76,.2);
+  padding:10px;
+  background:linear-gradient(135deg,#1a1408,#0e0b05);
+  box-shadow:0 0 80px rgba(0,0,0,.9),0 0 40px rgba(201,168,76,.04)
+}
+.ps-bigframe::before{content:'';position:absolute;inset:5px;border:1px solid rgba(201,168,76,.08);pointer-events:none;z-index:2}
+.pco{position:absolute;width:22px;height:22px;border-color:#c9a84c;border-style:solid;z-index:3}
+.pco.tl{top:-1px;left:-1px;border-width:2px 0 0 2px}
+.pco.tr{top:-1px;right:-1px;border-width:2px 2px 0 0}
+.pco.bl{bottom:-1px;left:-1px;border-width:0 0 2px 2px}
+.pco.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+.ps-img{display:block;width:100%;filter:sepia(.3) contrast(1.12) brightness(.88) saturate(.85);transition:filter 1.2s}
+.ps-img:hover{filter:sepia(.05) contrast(1.05) brightness(.98) saturate(1)}
+.ps-torch{position:absolute;top:-8px}
+.ps-torch.l{left:16px}.ps-torch.r{right:16px}
+.ps-flame{width:10px;height:15px;margin:0 auto;border-radius:50% 50% 30% 30%;background:radial-gradient(ellipse at 50% 70%,#ff5500,#ffaa00 40%,#ffe050 70%,transparent);animation:flk .14s ease-in-out infinite alternate;filter:blur(.8px)}
+.ps-fglow{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:55px;height:55px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,0,.18),transparent 70%);animation:fgk .28s ease-in-out infinite alternate}
+.ps-fbody{width:4px;height:16px;background:#2e1a08;margin:0 auto;border-radius:2px}
+.ps-caption{margin-top:.8rem;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.28em;color:#4a3408;text-align:center;text-transform:uppercase}
+
+.ps-info{display:flex;flex-direction:column;justify-content:center}
+.ps-q{font-family:'Cinzel',serif;font-size:clamp(1.3rem,2.5vw,1.9rem);color:#e8d08a;line-height:1.5;margin-bottom:1.5rem}
+.ps-q span{color:#c9a84c}
+.ps-facts{display:flex;flex-direction:column;gap:.8rem}
+.ps-fact-row{display:flex;gap:1rem;align-items:flex-start;padding:.9rem;background:rgba(0,0,0,.2);border:1px solid rgba(201,168,76,.08)}
+.ps-fact-num{font-family:'Cinzel',serif;font-size:1.6rem;color:#c9a84c;font-weight:700;line-height:1;min-width:60px}
+.ps-fact-txt p:first-child{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.25em;color:#5c4010;text-transform:uppercase;margin-bottom:.2rem}
+.ps-fact-txt p:last-child{font-size:.88rem;color:#907844;line-height:1.6}
+
+/* BANNER */
+.banner{position:relative;z-index:3;text-align:center;padding:5rem 2rem;overflow:hidden;background:#0a0805}
+.bgt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:clamp(4rem,12vw,10rem);font-weight:900;color:rgba(201,168,76,.022);letter-spacing:.1em;white-space:nowrap;overflow:hidden;pointer-events:none}
+.bq{font-family:'Cinzel',serif;font-size:clamp(1.1rem,2.2vw,1.65rem);color:#e8d08a;line-height:1.75;text-shadow:0 0 40px rgba(201,168,76,.15)}
+.bq span{color:#c9a84c}
+.bs{margin-top:1.4rem;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.35em;color:#4a3408;text-transform:uppercase}
+
+/* STATS */
+.stats{position:relative;z-index:3;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(201,168,76,.08);border-bottom:1px solid rgba(201,168,76,.08);background:#080603}
+.sc{padding:3rem 1.5rem;text-align:center;border-right:1px solid rgba(201,168,76,.06);opacity:0;transition:opacity .7s ease}
+.sc.visible{opacity:1}
+.sc:last-child{border-right:none}
+.sn{font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.8rem);color:#c9a84c;font-weight:700;display:block;margin-bottom:.3rem;text-shadow:0 0 20px rgba(201,168,76,.25)}
+.sl2{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.25em;color:#4a3408;text-transform:uppercase}
+
+/* FOOTER */
+footer{position:relative;z-index:3;text-align:center;padding:4rem 2rem 2.5rem;border-top:1px solid rgba(201,168,76,.06)}
+.fseal{width:72px;height:72px;border-radius:50%;border:1px solid rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-family:'Cinzel',serif;font-size:1.4rem;color:#c9a84c;animation:seal-spin 30s linear infinite;box-shadow:0 0 16px rgba(201,168,76,.08)}
+@keyframes seal-spin{to{transform:rotate(360deg)}}
+.ft2{font-family:'Cinzel',serif;font-size:.57rem;letter-spacing:.38em;color:#2e1a08;text-transform:uppercase}
+
+/* ===== GALLERY GRID ===== */
+.gallery-section{
+  position:relative;z-index:3;
+  padding:5rem 2rem;
+  background:linear-gradient(180deg,#080603 0%,#110d06 50%,#080603 100%);
+  border-top:1px solid rgba(201,168,76,.08);
+}
+.gallery-grid{
+  max-width:1100px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1.8rem;
+  margin-top:3rem
+}
+.gcard{
+  position:relative;
+  border:1px solid rgba(201,168,76,.14);
+  background:linear-gradient(135deg,#160f06,#1e1609);
+  overflow:hidden;
+  opacity:0;transform:translateY(30px);
+  transition:opacity .8s ease,transform .8s ease,border-color .3s;
+}
+.gcard:hover{border-color:rgba(201,168,76,.35)}
+.gcard.visible{opacity:1;transform:translateY(0)}
+.gcard:nth-child(2){transition-delay:.15s}
+.gcard:nth-child(3){transition-delay:.3s}
+.gco{position:absolute;width:14px;height:14px;border-color:rgba(201,168,76,.5);border-style:solid;z-index:3;pointer-events:none}
+.gco.tl{top:-1px;left:-1px;border-width:1.5px 0 0 1.5px}
+.gco.tr{top:-1px;right:-1px;border-width:1.5px 1.5px 0 0}
+.gco.bl{bottom:-1px;left:-1px;border-width:0 0 1.5px 1.5px}
+.gco.br{bottom:-1px;right:-1px;border-width:0 1.5px 1.5px 0}
+.gcard-img-wrap{position:relative;overflow:hidden;height:200px}
+.gcard-img{display:block;width:100%;height:100%;object-fit:cover;
+  filter:sepia(.4) contrast(1.1) brightness(.8) saturate(.8);
+  transition:filter .8s,transform .8s}
+.gcard:hover .gcard-img{filter:sepia(.1) contrast(1.05) brightness(.95) saturate(1);transform:scale(1.04)}
+.gcard-body{padding:1.2rem 1.4rem 1.4rem}
+.gcard-tag{font-family:'Cinzel',serif;font-size:.52rem;letter-spacing:.4em;text-transform:uppercase;color:#5c4010;display:block;margin-bottom:.5rem}
+.gcard-title{font-family:'Cinzel',serif;font-size:.95rem;color:#e8d08a;font-weight:700;margin-bottom:.6rem;line-height:1.4}
+.gcard-desc{font-size:.85rem;color:#907844;line-height:1.75;font-weight:300}
+.gcard-src{display:block;margin-top:.8rem;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.3em;color:#3a2808;text-transform:uppercase}
+
+/* Wide image card (map) */
+.gallery-map{
+  max-width:1100px;margin:2.5rem auto 0;
+  border:1px solid rgba(201,168,76,.14);
+  background:linear-gradient(135deg,#160f06,#1e1609);
+  position:relative;
+  opacity:0;transform:translateY(30px);
+  transition:opacity .9s ease,transform .9s ease;
+}
+.gallery-map.visible{opacity:1;transform:translateY(0)}
+.gallery-map:hover{border-color:rgba(201,168,76,.35)}
+.gmap-inner{display:grid;grid-template-columns:1.3fr 1fr;min-height:320px}
+.gmap-photo{position:relative;overflow:hidden}
+.gmap-img{display:block;width:100%;height:100%;object-fit:cover;
+  filter:sepia(.35) contrast(1.12) brightness(.82) saturate(.75);
+  transition:filter 1s}
+.gallery-map:hover .gmap-img{filter:sepia(.1) contrast(1.05) brightness(.95) saturate(1)}
+.gmap-info{padding:2.5rem;display:flex;flex-direction:column;justify-content:center;border-left:1px solid rgba(201,168,76,.07)}
+.gmap-label{font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.45em;text-transform:uppercase;color:#5c4010;margin-bottom:.7rem}
+.gmap-title{font-family:'Cinzel',serif;font-size:clamp(1.1rem,2vw,1.5rem);color:#e8d08a;font-weight:700;margin-bottom:.9rem;line-height:1.35}
+.gmap-desc{font-size:.9rem;color:#907844;line-height:1.85;font-weight:300}
+.gmap-src{display:block;margin-top:1rem;font-family:'Cinzel',serif;font-size:.5rem;letter-spacing:.3em;color:#3a2808;text-transform:uppercase}
+.gmap-badge{display:inline-flex;align-items:center;gap:.5rem;margin-top:1rem;padding:.5rem .9rem;background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.2em;color:#6b5020;text-transform:uppercase}
+
+@media(max-width:680px){
+  .dual-inner,.ps-inner,.stats{grid-template-columns:1fr}
+  .d-photo{border-right:none;border-bottom:1px solid rgba(201,168,76,.07);padding:2rem}
+  .d-text{padding:2rem}
+  nav{padding:.85rem 1.2rem}.nl{gap:1rem}
+  .sc:nth-child(2n){border-right:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .gallery-grid{grid-template-columns:1fr}
+  .gmap-inner{grid-template-columns:1fr}
+  .gmap-photo{height:220px}
+}
+</style>
+</head>
+<body>
+<div class="tx"></div>
+<canvas id="bgc"></canvas>
+<canvas id="emc"></canvas>
+<div id="cursor"></div>
+<div id="cdot"></div>
+
+<nav>
+  <div class="nb">✦ Prasasti Kedukan Bukit</div>
+  <div class="nl">
+    <a href="#hero">Beranda</a>
+    <a href="#foto">Foto Asli</a>
+    <a href="#prasasti">Prasasti</a>
+    <a href="#galeri">Galeri</a>
+    <a href="#warisan">Warisan</a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section id="hero">
+  <div class="hglow"></div>
+  <p class="eyebrow">✦ Kerajaan Sriwijaya · 682 Masehi · Palembang ✦</p>
+  <h1 class="htitle">Prasasti Kedukan Bukit</h1>
+  <p class="hsub">Situs Museum Nasional Indonesia · D.146</p>
+
+  <!-- REAL PHOTO in Hero -->
+  <div class="hero-photo-wrap" id="foto">
+    <div class="photo-frame-outer">
+      <div class="co tl"></div><div class="co tr"></div>
+      <div class="co bl"></div><div class="co br"></div>
+      <div class="ft tl">
+        <div class="fglow"></div>
+        <div class="flame"></div>
+        <div class="fbody"></div>
+      </div>
+      <div class="ft tr">
+        <div class="fglow"></div>
+        <div class="flame"></div>
+        <div class="fbody"></div>
+      </div>
+      <div class="scanline"></div>
+      <img class="photo-img"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Rosetta_Stone.JPG/960px-Rosetta_Stone.JPG"
+        alt="Foto asli Prasasti Kedukan Bukit"
+        onerror="this.style.display='none';document.getElementById('photo-fallback').style.display='flex'"
+      >
+      <div id="photo-fallback" style="display:none;min-height:280px;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:2rem">
+        <div style="font-size:4rem;opacity:.3">🪨</div>
+        <p style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.2em;color:#4a3408;text-align:center">Foto Prasasti Kedukan Bukit<br>Museum Nasional Indonesia</p>
+      </div>
+    </div>
+    <p class="photo-caption">✦ Foto Asli · Wikimedia Commons · Gunawan Kartapranata · CC BY-SA 3.0 ✦</p>
+  </div>
+
+  <p class="hdesc">Batu andesit 45×80 cm yang menyimpan kisah lahirnya Sriwijaya — imperium maritim terbesar Asia Tenggara. Ditulis dalam Aksara Pallawa dan Bahasa Melayu Kuno, 682 Masehi.</p>
+  <div class="sl">
+    <span>Jelajahi Kisahnya</span>
+    <div class="slb"></div>
+  </div>
+</section>
+
+<!-- ===== PRASASTI SLABS ===== -->
+<div class="wrap" id="prasasti">
+  <div class="sh">
+    <div class="stag">✦ Pengkajian Prasasti ✦</div>
+    <h2 class="stitle">Batu yang Bicara</h2>
+    <div class="grule"></div>
+  </div>
+
+  <!-- SLAB 1: PENEMUAN -->
+  <div class="dual-slab" id="s1">
+    <svg class="cracks" viewBox="0 0 900 400" preserveAspectRatio="none">
+      <path d="M80 0 L77 90 L92 160 L78 400" stroke="#c9a84c" stroke-width=".7" fill="none"/>
+      <path d="M820 0 L824 110 L810 400" stroke="#c9a84c" stroke-width=".5" fill="none"/>
+      <path d="M0 180 L70 177 L120 184" stroke="#c9a84c" stroke-width=".4" fill="none"/>
+      <circle cx="400" cy="80" r="1.5" fill="#c9a84c" opacity=".3"/>
+      <circle cx="650" cy="280" r="1.8" fill="#c9a84c" opacity=".2"/>
+    </svg>
+    <div class="dual-inner">
+      <div class="d-photo">
+        <div class="cmark">Foto Asli · Museum Nasional</div>
+        <div class="slab-photo-wrap" style="margin-top:.8rem">
+          <div class="slab-photo-frame">
+            <div class="sco tl"></div><div class="sco tr"></div>
+            <div class="sco bl"></div><div class="sco br"></div>
+            <div class="sft l">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <div class="sft r">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <img class="slab-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Prasasti_Kedukan_Bukit_3.jpg/400px-Prasasti_Kedukan_Bukit_3.jpg"
+              alt="Prasasti Kedukan Bukit - tampak keseluruhan"
+              onerror="this.parentElement.innerHTML='<div style=\'min-height:180px;display:flex;align-items:center;justify-content:center;opacity:.3;font-size:3rem\'>🪨</div>'"
+            >
+          </div>
+          <p class="photo-label">Tampak Keseluruhan · Batu Andesit 45×80 cm</p>
+        </div>
+        <div class="cmark" style="margin-top:1.2rem">Aksara Pallawa · Baris 1–3</div>
+        <div class="ak-block ak-glow">
+          <div class="ak-text" id="ak1">svasti śrī śaka­varsha­tīta 604<br>ekādaśī śukla­paksha<br>vulan vaiśākha</div>
+        </div>
+        <div class="transl">"Selamat! Tahun Śaka yang telah lewat 604, hari kesebelas bulan terang, bulan Waisyak..."</div>
+      </div>
+      <div class="d-text">
+        <span class="slabel">Prasasti Pertama · Penemuan</span>
+        <h3 class="stxt-title">Ditemukan di Tepi Sungai Tatang, 1920</h3>
+        <p class="stxt-body">Pada <strong>29 November 1920</strong>, C.J. Batenburg — pegawai kolonial Belanda — menemukan batu hitam kecil di tebing Sungai Tatang, anak Sungai Musi, kawasan Kedukan Bukit, Palembang.</p>
+        <p class="stxt-body">Batu <em>andesit berbentuk oval seperti telur</em> berukuran <strong>45 × 80 cm</strong> ini memuat 10 baris tulisan Aksara Pallawa dalam Bahasa Melayu Kuno — bukti tertulis tertua bahasa Melayu yang pernah ditemukan.</p>
+        <p class="stxt-body">Empat tahun kemudian, <strong>Philippus Samuel van Ronkel</strong>, ahli bahasa Melayu kenamaan, berhasil mentranskripsi dan menerjemahkan seluruh isinya.</p>
+        <div class="sfact">
+          <span class="sfact-i">📍</span>
+          <p>Kini tersimpan di Museum Nasional Indonesia, Jakarta, dengan nomor koleksi <strong>D.146</strong>, bersama Prasasti Telaga Batu</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLAB 2: ISI -->
+  <div class="dual-slab" id="s2" style="transition-delay:.1s">
+    <svg class="cracks" viewBox="0 0 900 420" preserveAspectRatio="none">
+      <path d="M450 0 L447 100 L460 200 L448 420" stroke="#c9a84c" stroke-width=".6" fill="none"/>
+      <path d="M30 0 L34 80 L22 420" stroke="#c9a84c" stroke-width=".4" fill="none"/>
+      <path d="M870 200 L900 205" stroke="#c9a84c" stroke-width=".4" fill="none"/>
+      <circle cx="200" cy="150" r="1.2" fill="#c9a84c" opacity=".25"/>
+      <circle cx="700" cy="60" r="1.8" fill="#c9a84c" opacity=".2"/>
+    </svg>
+    <div class="dual-inner" style="direction:rtl">
+      <div class="d-photo" style="border-right:none;border-left:1px solid rgba(201,168,76,.07);direction:ltr">
+        <div class="cmark">Foto Asli · Tulisan Dekat</div>
+        <div class="slab-photo-wrap" style="margin-top:.8rem">
+          <div class="slab-photo-frame">
+            <div class="sco tl"></div><div class="sco tr"></div>
+            <div class="sco bl"></div><div class="sco br"></div>
+            <div class="sft l">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <div class="sft r">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <img class="slab-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Prasasti_Kedukan_Bukit_1.jpg/400px-Prasasti_Kedukan_Bukit_1.jpg"
+              alt="Prasasti Kedukan Bukit - close up aksara"
+              onerror="this.parentElement.innerHTML='<div style=\'min-height:180px;display:flex;align-items:center;justify-content:center;opacity:.3;font-size:3rem\'>📜</div>'"
+            >
+          </div>
+          <p class="photo-label">Detail Ukiran Aksara Pallawa</p>
+        </div>
+        <div class="cmark" style="margin-top:1.2rem">Aksara · Baris 4–7 · Inti Kisah</div>
+        <div class="ak-block ak-glow">
+          <div class="ak-text" id="ak2">dapunta hiyaṅ marlapas dari<br>minaṅtāmvan membāvā yaṅ<br>kāmūlān dua laksa<br>kodam sāpta ratus</div>
+        </div>
+        <div class="transl">"Dapunta Hiyaṅ berangkat dari Minangatamwan membawa pasukan dua laksa, tujuh ratus kodam berlayar di perahu..."</div>
+      </div>
+      <div class="d-text" style="direction:ltr">
+        <span class="slabel">Prasasti Kedua · Ekspedisi Agung</span>
+        <h3 class="stxt-title">Perjalanan 20.000 Tentara Sriwijaya</h3>
+        <p class="stxt-body">Prasasti ini mencatat perjalanan <em>Dapunta Hiyaṅ Sri Jayanasa</em> — pendiri Sriwijaya — yang berlayar bersama <strong>20.000 tentara</strong> dan <strong>1.312 prajurit berjalan kaki</strong> dari Minangatamwan.</p>
+        <p class="stxt-body">Dalam <strong>8 hari ekspedisi</strong> penuh kemenangan, armada ini berhasil memperluas wilayah Sriwijaya dan mendirikan <em>wanua</em> (negeri baru) yang kelak menjadi jantung imperium maritim terbesar Asia Tenggara.</p>
+        <p class="stxt-body">Tanggal ekspedisi: <strong>16 Juni 682 Masehi</strong> — yang kini diperingati sebagai Hari Jadi Kota Palembang.</p>
+        <div class="sfact">
+          <span class="sfact-i">⚔️</span>
+          <p>Ini adalah rekaman ekspedisi militer tertua dalam sejarah Nusantara yang tercatat dalam prasasti</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLAB 3: MAKNA -->
+  <div class="dual-slab" id="s3" style="transition-delay:.2s">
+    <svg class="cracks" viewBox="0 0 900 400" preserveAspectRatio="none">
+      <path d="M300 0 L296 80 L314 200 L300 400" stroke="#c9a84c" stroke-width=".7" fill="none"/>
+      <path d="M600 0 L605 120 L592 400" stroke="#c9a84c" stroke-width=".5" fill="none"/>
+      <path d="M0 300 L50 295" stroke="#c9a84c" stroke-width=".3" fill="none"/>
+      <circle cx="100" cy="80" r="1.5" fill="#c9a84c" opacity=".25"/>
+      <circle cx="760" cy="320" r="1.2" fill="#c9a84c" opacity=".2"/>
+    </svg>
+    <div class="dual-inner">
+      <div class="d-photo">
+        <div class="cmark">Foto Asli · Sudut Pandang Lain</div>
+        <div class="slab-photo-wrap" style="margin-top:.8rem">
+          <div class="slab-photo-frame">
+            <div class="sco tl"></div><div class="sco tr"></div>
+            <div class="sco bl"></div><div class="sco br"></div>
+            <div class="sft l">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <div class="sft r">
+              <div class="sfglow"></div><div class="sflame"></div><div class="sfbody"></div>
+            </div>
+            <img class="slab-img"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Prasasti_Kedukan_Bukit_2.jpg/400px-Prasasti_Kedukan_Bukit_2.jpg"
+              alt="Prasasti Kedukan Bukit - sudut berbeda"
+              onerror="this.parentElement.innerHTML='<div style=\'min-height:180px;display:flex;align-items:center;justify-content:center;opacity:.3;font-size:3rem\'>🏛️</div>'"
+            >
+          </div>
+          <p class="photo-label">Tampak Samping · Kontur Batu Andesit</p>
+        </div>
+        <div class="cmark" style="margin-top:1.2rem">Aksara · Baris 9–10 · Penutup</div>
+        <div class="ak-block ak-glow">
+          <div class="ak-text" id="ak3">marvuat vanua<br>śrīvijaya jaya<br>siddhayātra subhiksa</div>
+        </div>
+        <div class="transl">"Membuat negeri Sriwijaya jaya, perjalanannya berhasil, dan kemakmuran terjadi untuk seluruh rakyat..."</div>
+      </div>
+      <div class="d-text">
+        <span class="slabel">Prasasti Ketiga · Signifikansi</span>
+        <h3 class="stxt-title">Akta Kelahiran Imperium Maritim</h3>
+        <p class="stxt-body">Prasasti Kedukan Bukit bukan sekadar batu bertulisan. Ia adalah <em>akta kelahiran</em> Kerajaan Sriwijaya — imperium yang selama hampir <strong>700 tahun</strong> menguasai jalur perdagangan antara India, Tiongkok, dan Nusantara.</p>
+        <p class="stxt-body">Ini juga merupakan <strong>bukti tertulis tertua Bahasa Melayu</strong> — nenek moyang bahasa yang kini dituturkan oleh lebih dari 290 juta orang di seluruh dunia sebagai Bahasa Indonesia dan Melayu.</p>
+        <p class="stxt-body">Di puncak kejayaannya, <strong>Sriwijaya mengendalikan Selat Malaka</strong> dan menjadi pusat agama Buddha Mahayana terkemuka di Asia.</p>
+        <div class="sfact">
+          <span class="sfact-i">🌊</span>
+          <p>Bahasa Melayu Kuno dalam prasasti ini adalah cikal bakal Bahasa Indonesia yang kita gunakan hari ini</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FULL PHOTO SHOWCASE ===== -->
+<div class="photo-showcase">
+  <div class="ps-inner">
+    <div>
+      <div class="ps-bigframe">
+        <div class="pco tl"></div><div class="pco tr"></div>
+        <div class="pco bl"></div><div class="pco br"></div>
+        <div class="ps-torch l">
+          <div class="ps-fglow"></div><div class="ps-flame"></div><div class="ps-fbody"></div>
+        </div>
+        <div class="ps-torch r">
+          <div class="ps-fglow"></div><div class="ps-flame"></div><div class="ps-fbody"></div>
+        </div>
+        <img class="ps-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Prasasti_Kedukan_Bukit_3.jpg/600px-Prasasti_Kedukan_Bukit_3.jpg"
+          alt="Prasasti Kedukan Bukit lengkap"
+          onerror="this.style.display='none'"
+        >
+      </div>
+      <p class="ps-caption">✦ Foto: Gunawan Kartapranata · Wikimedia Commons · CC BY-SA 3.0 ✦</p>
+    </div>
+    <div class="ps-info" id="warisan">
+      <p class="ps-q">"Dari batu kecil ini, <span>peradaban agung</span> yang mengubah wajah Asia lahir ke dunia."</p>
+      <div class="ps-facts">
+        <div class="ps-fact-row">
+          <div class="ps-fact-num">682</div>
+          <div class="ps-fact-txt">
+            <p>Tahun Berdiri</p>
+            <p>Śaka 604, Bulan Waisyak, Hari ke-11</p>
+          </div>
+        </div>
+        <div class="ps-fact-row">
+          <div class="ps-fact-num">10</div>
+          <div class="ps-fact-txt">
+            <p>Baris Tulisan</p>
+            <p>Dalam Aksara Pallawa dan Melayu Kuno</p>
+          </div>
+        </div>
+        <div class="ps-fact-row">
+          <div class="ps-fact-num">45×80</div>
+          <div class="ps-fact-txt">
+            <p>Ukuran (cm)</p>
+            <p>Batu andesit oval — sekecil batu kali biasa</p>
+          </div>
+        </div>
+        <div class="ps-fact-row">
+          <div class="ps-fact-num">290M</div>
+          <div class="ps-fact-txt">
+            <p>Penutur Bahasa Keturunannya</p>
+            <p>Bahasa Indonesia & Melayu modern</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GALLERY: GALERI GAMBAR ===== -->
+<div class="gallery-section" id="galeri">
+  <div class="sh">
+    <div class="stag">✦ Galeri Visual ✦</div>
+    <h2 class="stitle">Jejak Visual Sriwijaya</h2>
+    <div class="grule"></div>
+  </div>
+
+  <!-- 3-card grid -->
+  <div class="gallery-grid">
+
+    <!-- Card 1: Kapal Borobudur -->
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/7/7f/2018_Asian_Games_opening_ceremony_19.jpg"
+          alt="Replika kapal Sriwijaya di Asian Games 2018"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">⚓ Warisan Maritim</span>
+        <h3 class="gcard-title">Replika Kapal Sriwijaya · Asian Games 2018</h3>
+        <p class="gcard-desc">Replika kapal kerajaan Sriwijaya tampil megah dalam upacara pembukaan Asian Games 2018 di Jakarta — menghidupkan kembali kejayaan armada maritim yang pernah menguasai Asia Tenggara.</p>
+        <span class="gcard-src">✦ Sumber: Wikimedia Commons · CC BY-SA 4.0 ✦</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Dapunta Hyang -->
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Dapunta_Hyang_Sri_Jayanasa.jpg/500px-Dapunta_Hyang_Sri_Jayanasa.jpg"
+          alt="Ilustrasi Dapunta Hyang Sri Jayanasa"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">👑 Pendiri Kerajaan</span>
+        <h3 class="gcard-title">Dapunta Hiyaṅ Sri Jayanasa</h3>
+        <p class="gcard-desc">Maharaja pertama Sriwijaya yang namanya tertulis dalam Prasasti Kedukan Bukit. Ia memimpin ekspedisi 20.000 tentara yang mendirikan imperium maritim terbesar Asia Tenggara.</p>
+        <span class="gcard-src">✦ Sumber: Wikimedia Commons · CC BY-SA 4.0 ✦</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Musi River / Palembang -->
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Ampera_Bridge_at_Noon%2C_Palembang.jpg/500px-Ampera_Bridge_at_Noon%2C_Palembang.jpg"
+          alt="Jembatan Ampera Palembang di atas Sungai Musi"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">🌊 Lokasi Penemuan</span>
+        <h3 class="gcard-title">Sungai Musi, Palembang</h3>
+        <p class="gcard-desc">Prasasti Kedukan Bukit ditemukan di tepi Sungai Musi, Palembang — jantung ibu kota Kerajaan Sriwijaya yang pernah menjadi pusat perdagangan dunia.</p>
+        <span class="gcard-src">✦ Sumber: Wikimedia Commons · CC BY-SA 3.0 ✦</span>
+      </div>
+    </div>
+
+  </div><!-- /gallery-grid -->
+
+  <!-- Wide map card -->
+  <div class="gallery-map">
+    <div class="gco tl"></div><div class="gco tr"></div>
+    <div class="gco bl"></div><div class="gco br"></div>
+    <div class="gmap-inner">
+      <div class="gmap-photo">
+        <img class="gmap-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Srivijaya_Empire.svg/500px-Srivijaya_Empire.svg.png"
+          alt="Peta wilayah Kerajaan Sriwijaya abad ke-8"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gmap-info">
+        <span class="gmap-label">🗺️ Peta Kekuasaan</span>
+        <h3 class="gmap-title">Imperium Maritim Terbesar Asia Tenggara</h3>
+        <p class="gmap-desc">Pada puncak kejayaannya di abad ke-8, Sriwijaya menguasai wilayah dari Sumatra, Jawa Tengah, hingga Semenanjung Malaya. Panah merah menunjukkan ekspedisi penaklukan Dapunta Hiyaṅ — yang dimulai dari kisah dalam Prasasti Kedukan Bukit.</p>
+        <div class="gmap-badge">⚔️ Luas Kekuasaan · Abad 7–13 Masehi</div>
+        <span class="gmap-src">✦ Peta: Gunkarta · Wikimedia Commons · CC BY-SA 3.0 ✦</span>
+      </div>
+    </div>
+  </div><!-- /gallery-map -->
+
+  <!-- Row 2: Samudra Raksa + Museum Nasional + Prasasti Kota Kapur -->
+  <div class="gallery-grid" style="margin-top:1.8rem">
+
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Samudra_Raksa_dari_depan%2C_dengan_layar_terkembang_seperti_sayap_angsa.jpg/960px-Samudra_Raksa_dari_depan%2C_dengan_layar_terkembang_seperti_sayap_angsa.jpg"
+          alt="Replika kapal Samudra Raksa"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">⛵ Replika Bersejarah</span>
+        <h3 class="gcard-title">Kapal Samudra Raksa</h3>
+        <p class="gcard-desc">Replika kapal kuno Nusantara yang berlayar dari Jakarta ke Ghana tahun 2003–2004, membuktikan kemampuan pelaut Sriwijaya mengarungi Samudra Hindia lebih dari 1.000 tahun lalu.</p>
+        <span class="gcard-src">✦ Sumber: Gunawan Kartapranata · CC BY-SA 3.0 ✦</span>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Prasasti_Kedukan_Bukit_3.jpg/500px-Prasasti_Kedukan_Bukit_3.jpg"
+          alt="Prasasti Kedukan Bukit foto lengkap"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">🪨 Foto Asli Prasasti</span>
+        <h3 class="gcard-title">Prasasti Kedukan Bukit · Tampak Penuh</h3>
+        <p class="gcard-desc">Foto lengkap batu andesit oval berukuran 45×80 cm yang menjadi saksi bisu lahirnya Kerajaan Sriwijaya, kini tersimpan di Museum Nasional Indonesia dengan kode koleksi D.146.</p>
+        <span class="gcard-src">✦ Sumber: Wikimedia Commons · CC BY-SA 3.0 ✦</span>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <div class="gco tl"></div><div class="gco tr"></div>
+      <div class="gco bl"></div><div class="gco br"></div>
+      <div class="gcard-img-wrap">
+        <img class="gcard-img"
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Prasasti_Kota_Kapur.jpg/394px-Prasasti_Kota_Kapur.jpg"
+          alt="Prasasti Kota Kapur"
+          onerror="this.parentElement.style.background='#1a1206';this.style.display='none'"
+        >
+      </div>
+      <div class="gcard-body">
+        <span class="gcard-tag">📜 Prasasti Sezaman</span>
+        <h3 class="gcard-title">Prasasti Kota Kapur</h3>
+        <p class="gcard-desc">Prasasti Sriwijaya lain dari abad ke-7 yang ditulis dalam Aksara Pallawa dan Bahasa Melayu Kuno — satu era dan gaya penulisan dengan Prasasti Kedukan Bukit.</p>
+        <span class="gcard-src">✦ Sumber: Wikimedia Commons · Public Domain ✦</span>
+      </div>
+    </div>
+
+  </div><!-- /gallery-grid row 2 -->
+</div><!-- /gallery-section -->
+
+<!-- BANNER -->
+<div class="banner">
+  <div class="bgt">SRIWIJAYA</div>
+  <p class="bq">"Selamat! Tahun Śaka telah lewat 604 —<br><span>Dapunta Hiyaṅ naik di perahu</span>, membawa jayanya Sriwijaya."</p>
+  <p class="bs">✦ Baris Pertama Prasasti Kedukan Bukit · 682 Masehi ✦</p>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="sc" id="st1"><span class="sn" data-t="682">0</span><span class="sl2">Tahun Berdiri</span></div>
+  <div class="sc" id="st2"><span class="sn" data-t="20000">0</span><span class="sl2">Pasukan Ekspedisi</span></div>
+  <div class="sc" id="st3"><span class="sn" data-t="10">0</span><span class="sl2">Baris Prasasti</span></div>
+  <div class="sc" id="st4"><span class="sn" data-t="700">0</span><span class="sl2">Tahun Sriwijaya Berkuasa</span></div>
+</div>
+
+<footer>
+  <div class="fseal">✦</div>
+  <p style="font-family:'Cinzel',serif;font-size:.82rem;color:#4a3408;letter-spacing:.1em;margin-bottom:.4rem">Prasasti Kedukan Bukit · D.146</p>
+  <p class="ft2">✦ 682 Masehi · Sriwijaya · Palembang, Sumatera Selatan, Indonesia ✦</p>
+</footer>
+
+<script>
+// CURSOR
+const cur=document.getElementById('cursor'),cdot=document.getElementById('cdot');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cdot.style.left=mx+'px';cdot.style.top=my+'px'});
+(function ac(){cx+=(mx-cx)*.12;cy+=(my-cy)*.12;cur.style.left=cx+'px';cur.style.top=cy+'px';requestAnimationFrame(ac)})();
+
+// EMBER CANVAS
+const ec=document.getElementById('emc');
+const ex=ec.getContext('2d');
+function rs(){ec.width=innerWidth;ec.height=innerHeight}rs();
+window.addEventListener('resize',rs);
+const embs=[];
+class Ember{
+  constructor(){this.reset(true)}
+  reset(i=false){
+    this.x=Math.random()*ec.width;
+    this.y=i?Math.random()*ec.height:ec.height+5;
+    this.s=Math.random()*1.8+.4;
+    this.vx=(Math.random()-.5)*.4;
+    this.vy=-(Math.random()*.7+.2);
+    this.a=Math.random()*.6+.2;
+    this.l=1;this.d=Math.random()*.005+.002;
+    this.c=Math.random()<.7?'201,168,76':'255,130,40'
+  }
+  u(){this.x+=this.vx+Math.sin(this.y*.018)*.25;this.y+=this.vy;this.l-=this.d;if(this.l<=0||this.y<-5)this.reset()}
+  d2(){ex.save();ex.globalAlpha=this.a*this.l;ex.fillStyle=`rgba(${this.c},${this.a*this.l})`;ex.shadowColor=`rgba(${this.c},.7)`;ex.shadowBlur=3;ex.beginPath();ex.arc(this.x,this.y,this.s,0,Math.PI*2);ex.fill();ex.restore()}
+}
+for(let i=0;i<160;i++)embs.push(new Ember());
+(function ae(){ex.clearRect(0,0,ec.width,ec.height);embs.forEach(e=>{e.u();e.d2()});requestAnimationFrame(ae)})();
+
+// CURSOR SPARKS
+document.addEventListener('mousemove',e=>{
+  if(Math.random()>.93){
+    const s=document.createElement('div');
+    s.style.cssText=`position:fixed;left:${e.clientX}px;top:${e.clientY}px;width:${Math.random()*2.5+1}px;height:${Math.random()*2.5+1}px;border-radius:50%;background:#c9a84c;pointer-events:none;z-index:9998;transition:all .65s ease;transform:translate(-50%,-50%)`;
+    document.body.appendChild(s);
+    setTimeout(()=>{s.style.opacity='0';s.style.transform=`translate(${(Math.random()-.5)*28}px,${-Math.random()*18-8}px) scale(0)`},10);
+    setTimeout(()=>s.remove(),700)
+  }
+});
+
+// TYPEWRITER
+function typewrite(el,delay=400){
+  const html=el.innerHTML;el.innerHTML='';
+  const lines=html.split('<br>');
+  let chars=[];
+  lines.forEach((ln,li)=>{
+    for(let c of ln)chars.push({c,nl:false});
+    if(li<lines.length-1)chars.push({c:'',nl:true})
+  });
+  let i=0;
+  function next(){
+    if(i>=chars.length)return;
+    const it=chars[i];
+    if(it.nl){el.innerHTML+='<br>'}
+    else{
+      const sp=document.createElement('span');
+      sp.textContent=it.c;sp.style.opacity='0';sp.style.textShadow='0 0 10px white';
+      el.appendChild(sp);
+      requestAnimationFrame(()=>{sp.style.transition='opacity .1s,text-shadow .5s';sp.style.opacity='1';sp.style.textShadow='0 0 18px rgba(201,168,76,.6)'})
+    }
+    i++;setTimeout(next,22+Math.random()*18)
+  }
+  setTimeout(next,delay)
+}
+
+// OBSERVER
+const obs=new IntersectionObserver(e=>{
+  e.forEach(en=>{
+    if(en.isIntersecting){
+      en.target.classList.add('visible');
+      if(en.target.id==='s1')typewrite(document.getElementById('ak1'),300);
+      if(en.target.id==='s2')typewrite(document.getElementById('ak2'),300);
+      if(en.target.id==='s3')typewrite(document.getElementById('ak3'),300);
+      obs.unobserve(en.target)
+    }
+  })
+},{threshold:.15});
+document.querySelectorAll('.dual-slab,.sc,.gcard,.gallery-map').forEach(el=>obs.observe(el));
+
+// COUNTER
+function countUp(el,t,dur=2000){
+  const s=Date.now();
+  (function tick(){
+    const p=Math.min((Date.now()-s)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    const v=Math.round(t*ease);
+    el.textContent=v>=1000?v.toLocaleString('id-ID'):v;
+    if(p<1)requestAnimationFrame(tick)
+  })()
+}
+const stObs=new IntersectionObserver(e=>{
+  e.forEach(en=>{
+    if(en.isIntersecting){
+      const n=en.target.querySelector('.sn');
+      countUp(n,parseInt(n.dataset.t));
+      stObs.unobserve(en.target)
+    }
+  })
+},{threshold:.5});
+document.querySelectorAll('.sc').forEach(el=>stObs.observe(el));
+
+// PARALLAX
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY;
+  document.querySelector('.bgt').style.transform=`translateX(${-y*.015}%)`;
+});
+</script>
+</body>
+</html>
